@@ -101,14 +101,7 @@ def doc_to_tensor(doc):
     :param doc: 문자열 리스트
     :return: 벡터(n, 100) (n=단어 수)
     """
-    tensor = None
-    for word in doc:
-        w_tensor = word_to_tensor(word)
-        if w_tensor is not None:
-            if tensor is None:
-                tensor = w_tensor
-            else:
-                tensor = torch.cat([tensor, w_tensor])
+    tensor = torch.cat([word_to_tensor(word) for word in doc])
     return tensor.to(device)
 
 
@@ -130,18 +123,18 @@ def train(input, target):
     :param target: 타겟 텐서
     :return: 출력, 손실 평균값
     """
+    model.train()
+    model.batch_size = batch_size
     # 기울기 초기화
     hidden = model.init_hidden()
     optimizer.zero_grad()
-    loss = 0
 
+    loss = 0
     # 단어 입력
     for i in range(input.size()[0]):
-        output, hidden = model(input.data[i].unsqueeze(0), hidden)
-        l = criterion(output, target.data[i])
-        loss += l
+        output, hidden = model(input[i].unsqueeze(0), hidden)
+        loss += criterion(output, target[i])
 
-    # 역전파
     loss.backward()
 
     # 최적화
@@ -150,24 +143,29 @@ def train(input, target):
     # 학습률 조정
     scheduler.step()
 
-    return loss
+    return loss.item() / input.size()[0]
 
 
 def generate_lyrics(str):
+    model.eval()
+    model.batch_size = 1
     input = get_input(str)
     hidden = model.init_hidden()
     generated_lyrics = ""
     word_cnt = 0
 
+    for i in range(len(str) - 1):
+        output, hidden = model(input[i].unsqueeze(0).unsqueeze(0), hidden)
+
+    word = str[-1]
     while word_cnt < 100:
-        input = input.resize(len(input), 1, input_size)
+        input = word_to_tensor(word).unsqueeze(0).to(device)
         output, hidden = model(input, hidden)
         output = output.argmax()
         word = idx_to_words[output]
         if word == "<EOS>":
             break
         generated_lyrics += '%s ' % word
-        input = get_input(word)
         word_cnt += 1
 
     return generated_lyrics

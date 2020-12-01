@@ -2,12 +2,9 @@ import sys
 import matplotlib.pyplot as plt
 import time
 import datetime
-from train_utils import time_since, train, get_batch_set
+from train_utils import time_since, train, get_batch_set, generate_lyrics
 from hyperparameters import *
 
-
-# 학습 모드로 전환
-model.train()
 
 # 손실 리스트
 losses = []
@@ -23,7 +20,6 @@ start = time.time()
 now = datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
 
 # 학습 정보 출력
-print()
 print("----------------")
 print("학습을 시작합니다.")
 print("현재 시각:", now)
@@ -34,14 +30,10 @@ print()
 
 # 학습 시작
 try:
-    for iter in range(n_iter):
+    for iter in range(1, n_iter + 1):
         input, target = get_batch_set()
         loss = train(input, target)
-        print(loss)
         total_loss += loss
-
-        # 에폭당 손실
-        total_loss /= len(train_data)
 
         # 현재 학습 과정 출력
         if iter % print_every == 0:
@@ -49,10 +41,15 @@ try:
             sys.stdout.write("%d %d%% (%s) %.4f\n" % (iter, iter / n_iter * 100, time_since(start), avg_loss))
             losses.append(avg_loss)
             total_loss = 0
+            lyrics = generate_lyrics(['사랑', '발라드'])
+            print(lyrics)
+            print()
+
+    sys.stdout.write("학습이 완료되었습니다.\n")
 
 # 중단 시그널 핸들링
 except KeyboardInterrupt:
-    print("training terminated.")
+    print("학습이 중단되었습니다.")
     pass
 
 # 손실 그래프 출력
@@ -61,6 +58,6 @@ plt.plot(losses)
 plt.show()
 
 # 모델 저장
-sys.stdout.write("train finished\n")
-torch.save(model, path + "/model/" + "lyrics_generator_" + now + ".pt")
-sys.stdout.write("saved a model.\n")
+file_name = path + "model/" + "lyrics_generator_" + now + ".pt"
+torch.save(model, file_name)
+sys.stdout.write("'%s'에 모델을 저장했습니다." % file_name)

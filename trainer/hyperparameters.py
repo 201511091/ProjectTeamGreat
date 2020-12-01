@@ -25,7 +25,7 @@ word_to_idx["<EOS>"] = len(idx_to_words)
 idx_to_words.append("<EOS>")
 
 # 배치 크기
-batch_size = 128
+batch_size = 16
 
 # 학습률
 learning_rate = 0.02
@@ -75,14 +75,11 @@ criterion = nn.CrossEntropyLoss()
 # 역전파 때 사용할 최적화 기법
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-# 학습 과정 출력 빈도
-print_every = 1
-
-# 손실 값 그래프에 입력하는 빈도
-plot_every = 1
-
 # 반복 횟수
-n_iter = 100
+n_iter = 5000
+
+# 학습 과정 출력 빈도
+print_every = n_iter//100
 
 # 학습률 스케쥴러
 scheduler = StepLR(optimizer, step_size=int(n_iter/3), gamma=0.1)
